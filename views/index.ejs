@@ -77,8 +77,17 @@
       var pc;
       var mediaConstraints = { audio: false, video: true };
       var SIGINAL_ROOM = "siginal_room";
-
-      var socket = new WebSocket("ws://localhost:3000/socket");
+      var host = window.location.host;
+      var scheme = "ws";
+      if (!host) {
+        host = "localhost";
+      }
+      if (document.location.protocol === "https:") {
+        scheme += "s";
+      }
+      var serverUrl = scheme + "://" + host;
+      var socket = new WebSocket(serverUrl + "/socket");
+      console.log(serverUrl);
       socket.addEventListener("open", open);
       socket.addEventListener("message", message);
       socket.addEventListener("close", close);
