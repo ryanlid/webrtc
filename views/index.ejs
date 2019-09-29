@@ -91,19 +91,21 @@
       socket.addEventListener("error", error);
       function open(e) {
         console.log("open", e);
-        // send({ event: "signal", message: "Are you ready for a call?" });
+        send({
+          event: "signal",
+          type: "newuser",
+          message: "Are you ready for a call?"
+        });
       }
-
-      startSignaling();
 
       function message(e) {
         // console.log("message", e);
         var res = JSON.parse(e.data);
         console.log("message", res);
-
         if (res.event === "signal") {
-          console.log(1234);
-          console.log(pc);
+          if (!pc) {
+            startSignaling();
+          }
           if (res.type === "SDP") {
             console.log("sdppppp", res.data.sdp);
             console.log(pc);
