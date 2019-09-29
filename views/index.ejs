@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>WebRTC</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="video-area">
+      <div class="video-area-item">
+        <video
+          id="myVideo"
+          autoplay
+          muted
+          preload="auto"
+          controls="controls"
+          webkit-playsinline="true"
+          playsinline=""
+          x5-playsinline="true"
+          x-webkit-airplay="true"
+        ></video>
+        <div>我的视频</div>
+      </div>
+      <div class="video-area-item">
+        <video
+          id="yourVideo"
+          autoplay
+          muted
+          preload="auto"
+          controls="controls"
+          webkit-playsinline="true"
+          playsinline=""
+          x5-playsinline="true"
+          x-webkit-airplay="true"
+        ></video>
+        <!-- src="https://cdn.cnbj1.fds.api.mi-img.com/mi-mall/8b3c91f98995ff517cacf28f5318a877.mp4" -->
+        <div>TA的视频</div>
+      </div>
+    </div>
+    <div>
+      <div>
+        <label>名字</label>
+        <input type="text" id="myName" value="Tom" />
+        <label>消息</label>
+        <input type="text" id="myMessage" value="hello" />
+        <input type="submit" id="sendMessage" value="发送" />
+      </div>
+      <div class="record-area">
+        <div class="border-solid">
+          <div>聊天消息记录:</div>
+          <div id="chatArea" class="box-item"></div>
+        </div>
+        <div class="border-solid">
+          <div>信号记录区:</div>
+          <div id="signalingArea" class="box-item"></div>
+        </div>
+      </div>
+    </div>
+    <script>
+      // Generate random room name if needed
+      if (!location.hash) {
+        location.hash = Math.floor(Math.random() * 0xffffff).toString(16);
+      }
+      const roomHash = location.hash.substring(1);
+      // facingMode: user, environment
+      var myVideo = document.querySelector("#myVideo");
+      var yourVideo = document.querySelector("#yourVideo");
+      var logError = function(err) {
+        console.error(err.message);
+      };
+      var log = function(err) {
+        console.log(err);
+      };
+      var configuration = {
+        iceServers: [
+          {
+            urls: "stun:stun.ideasip.com"
+          }
+        ]
+      };
+      var pc;
+      var mediaConstraints = { audio: false, video: true };
+      var SIGINAL_ROOM = "siginal_room";
+
+      var socket = new WebSocket("ws://localhost:3000/socket");
+      socket.addEventListener("open", open);
+      socket.addEventListener("message", message);
+      socket.addEventListener("close", close);
+      socket.addEventListener("error", error);
+      function open(e) {
+        console.log("open", e);
+        // send({ event: "signal", message: "Are you ready for a call?" });
+      }
+
+      startSignaling();
+
+      function message(e) {
+        // console.log("message", e);
+        var res = JSON.parse(e.data);
+        console.log("message", res);
+
+        if (res.event === "signal") {
+          console.log(1234);
+          console.log(pc);
+          if (res.type === "SDP") {
+            console.log("sdppppp", res.data.sdp);
+            console.log(pc);
+            pc.setRemoteDescription(new RTCSessionDescription(res.data.sdp))
+              .then(function() {
+                log("get sdp");
+                console.log(pc);
+
+                if (pc.remoteDescription.type == "offer") {
+                  pc.createAnswer(sendLocalDesc, logError);
+                } else {
+                  return;
+                }
+              })
+              .catch(err => {
+                console.error(err);
+              });
+            // } else if (res.type === "candidate") {
+            //   console.log("candidate", res.data.candidate);
+            //   pc.addIceCandidate(new RTCIceCandidate(res.data.candidate))
+            //     .then()
+            //     .catch(err => {
+            //       console.error(err);
+            //     });
+          } else {
+            console.log(333333);
+          }
+        } else {
+          console.log(12222222);
+          // startSignaling();
+        }
+      }
+      function close(e) {
+        console.log("close", e);
+      }
+      function error(e) {
+        console.log("error", e);
+      }
+      function send(msg) {
+        socket.send(JSON.stringify(msg));
+      }
+
+      // handleOffer()
+      // startSignaling();
+      function startSignaling() {
+        console.log("starting signaling...111111");
+        pc = new RTCPeerConnection(configuration);
+        console.log(pc);
+        // 只要本地代理ICE 需要通过信令服务器传递信息给其他对等端时就会触发
+        pc.onicecandidate = function(evt) {
+          if (evt.candidate) {
+            // signal ice canidate
+            send({
+              event: "signal",
+              type: "candidate",
+              data: {
+                candidate: evt.candidate
+              }
+            });
+          }
+          log("completed that ice candidate");
+        };
+        // // 当发生的更改需要会话协商时间， 此事件将启动createOffer流程，并且仅由提供者的用户处理。
+        pc.onnegotiationneeded = function() {
+          log("on negotiation called");
+          pc.createOffer()
+            .then(sendLocalDesc)
+            .catch(err => {
+              console.error(err);
+            });
+        };
+        // 当远程流到达时，显示流
+        pc.onaddstream = function(evt) {
+          log("going to add their stream...");
+          yourVideo.srcObject = evt.stream;
+        };
+        //  pc.onaddStream = URL.createObjectURL(evt.stream)
+        pc.ontrack = event => {
+          console.log(4444444);
+        };
+
+        // 显示本地的流
+        navigator.mediaDevices
+          .getUserMedia(mediaConstraints)
+          .then(function(stream) {
+            log("going to display my stream....");
+            myVideo.srcObject = stream;
+            // myVideo.className = "grayscale_filter";
+            myVideo.play();
+            pc.addStream(stream);
+          })
+          .catch(logError);
+      }
+      // 当 createOffer和 answering 时需要更新本地的描述（description）
+      function sendLocalDesc(desc) {
+        console.log("sendLocalDescsendLocalDescsendLocalDescsendLocalDesc");
+        pc.setLocalDescription(desc)
+          .then(() => {
+            console.log(1111);
+            log("sending localdescription");
+            send({
+              event: "signal",
+              type: "SDP",
+              data: { sdp: pc.localDescription }
+            });
+          })
+          .catch(logError);
+      }
+
+      document
+        .querySelector("#sendMessage")
+        .addEventListener("click", function() {
+          var name = document.querySelector("#myName").value;
+          var value = document.querySelector("#myMessage").value;
+          send({
+            type: "message",
+            data: { name: name, message: value }
+          });
+        });
+    </script>
+  </body>
+</html>

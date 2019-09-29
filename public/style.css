@@ -1,0 +1,27 @@
+.video-area,
+.record-area {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 50% 50%;
+  text-align: center;
+  grid-template-rows: auto;
+  grid-auto-flow: dense;
+}
+.video-area-item {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2px;
+
+}
+.video-area-item video {
+  border: solid 1px #ddd;
+  width: 100%;
+}
+
+.box-item {
+  border: solid 1px #ddd;
+  height: 250px;
+  overflow: auto;
+}

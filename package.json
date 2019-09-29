@@ -1,0 +1,31 @@
+{
+  "name": "webrtc",
+  "version": "1.0.0",
+  "description": "A simple project created by WebRTC",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "ejs": "^2.7.1",
+    "express": "^4.17.1",
+    "socket.io": "^2.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^1.19.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryanlid/webrtc.git"
+  },
+  "keywords": [
+    "webrtc"
+  ],
+  "author": "ryanlid",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ryanlid/webrtc/issues"
+  },
+  "homepage": "https://github.com/ryanlid/webrtc#readme"
+}
